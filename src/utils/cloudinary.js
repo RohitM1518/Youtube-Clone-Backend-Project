@@ -5,7 +5,6 @@ import fs from 'fs' //This is the file system from the node js
 //Tod delete we use unlink, whenever the file is uploaded from server(local) to clodinary we will unlink the file
 
 //copy paste the below config code from clodinary website
-import {v2 as cloudinary} from 'cloudinary';
           
 cloudinary.config({ 
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME, 
@@ -22,7 +21,8 @@ const uploadOnCloudinary = async (localFilePath)=>{
             resource_type:"auto" //detects on its own whether it is pdf,image etc
         })
         //file uploaded successfully
-        console.log("File is uploaded on cloudinary",response.url);
+        fs.unlinkSync(localFilePath) 
+       // console.log("File is uploaded on cloudinary",response.url);
         return response;
     } catch (error) {
         fs.unlinkSync(localFilePath) //remove the locally stored temproary file as the upload operation is failed
