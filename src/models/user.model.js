@@ -28,12 +28,12 @@ const userSchema = new mongoose.Schema(
             type:String, //Cloudinary URL
             required:true,
         },
-        coverimage:{
+        coverImage:{
             type:String,
         },
         watchHistory:[
             {
-                type:Schema.Types.ObjectId,
+                type:mongoose.Schema.Types.ObjectId,
                 ref:"Video"
             }
         ],
@@ -50,7 +50,7 @@ const userSchema = new mongoose.Schema(
 
 userSchema.pre("save",async function (next){
     if(!this.isModified("password")) return next(); //use only when user wants to store the password not during all the times like while updating the avatar or coverpage
-    this.password = bcrypt.hash(this.password,10) //10 is number of rounds to be used to encrypt
+    this.password = await bcrypt.hash(this.password,10) //10 is number of rounds to be used to encrypt
     next()
     
 }) 
@@ -89,4 +89,4 @@ userSchema.methods.generateRefreshToken = async function(){
         }
     )
 }
-export const User = mongoose.Model("User",userSchema) //In mongodb "User" will be saved as "users"
+export const User = mongoose.model("User",userSchema) //In mongodb "User" will be saved as "users"
