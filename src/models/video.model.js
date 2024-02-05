@@ -20,7 +20,7 @@ const videoSchema = new mongoose.Schema(
         required:true,
     },
     duration:{
-        type:Number, //From clodnery url we can extract duration of a video
+        type:Number, //From clodinary url we can extract duration of a video
         required:true,
     },
     views:{
@@ -37,6 +37,6 @@ const videoSchema = new mongoose.Schema(
     }
 },{timestamps:true})
 
-videoSchema.plugin(mongooseAggregatePaginate)
+videoSchema.plugin(mongooseAggregatePaginate) //used for quering 
 
 export const User = mongoose.Model("Video",videoSchema)

@@ -24,4 +24,5 @@ import userRoute from "./routes/user.routes.js"
 
 app.use("/api/v1/users",userRoute) //use instead of app.get
 //http://Localhost:8000/api/v1/users/register
+
 export {app}

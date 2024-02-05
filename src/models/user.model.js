@@ -9,7 +9,7 @@ const userSchema = new mongoose.Schema(
             unique:true,
             lowercase:true,
             trim:true,
-            index:true //Index helps to search in database
+            index:true //Index helps to search in database and dont make all the fields as index because it will slow down the search
         },
         email:{
             type:String,
@@ -48,7 +48,8 @@ const userSchema = new mongoose.Schema(
 
     },{timestamps:true})
 
-userSchema.pre("save",async function (next){
+//pre is a middleware which will run before saving the data in database in mongoose
+    userSchema.pre("save",async function (next){ //do not use arrow function because it will not save the context
     if(!this.isModified("password")) return next(); //use only when user wants to store the password not during all the times like while updating the avatar or coverpage
     this.password = await bcrypt.hash(this.password,10) //10 is number of rounds to be used to encrypt
     next()
@@ -58,7 +59,7 @@ userSchema.pre("save",async function (next){
 //This pre will encrypty the passsword befaore saving the data in database
 
 
-//custom method is PasswordCorrect
+//custom method isPasswordCorrect injected into the userSchema
 userSchema.methods.isPasswordCorrect = async function(password){ 
   return await bcrypt.compare(password,this.password)
    //returns true or false
@@ -73,7 +74,7 @@ userSchema.methods.generateAccessToken = function(){
             username:this.username,
             fullname:this.fullname //right side things are coming from database
         },
-        process.env.ACCESS_TOKEN_SECRET,
+        process.env.ACCESS_TOKEN_SECRET, //This is the secret key which is used to encrypt the data
         {
             expiresIn:process.env.ACCESS_TOKEN_EXPIRY
         }
@@ -84,7 +85,7 @@ userSchema.methods.generateRefreshToken = async function(){
         {
             _id: this.id,
         },
-        process.env.REFRESH_TOKEN_SECRET,
+        process.env.REFRESH_TOKEN_SECRET,//This is the secret key which is used to encrypt the data
         {
             expiresIn: process.env.REFRESH_TOKEN_EXPIRY
         }

@@ -3,7 +3,7 @@ import { ApiError } from '../utils/ApiError.js'
 import { User } from '../models/user.model.js'
 import { uploadOnCloudinary } from "../utils/cloudinary.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
-import { Jwt } from "jsonwebtoken"
+import Jwt  from "jsonwebtoken"
 
 const generateAccessAndRefreshToken=async(userId)=>{
     try {
@@ -44,6 +44,9 @@ const registerUser = asyncHandler(async (req, res) => {
     // }
 
     if ([fullname, email, username, password].some((feild) => feild?.trim() === "")) {
+// field represents each element of the array during iteration.
+// field?.trim() trims any leading or trailing whitespaces from the value of field. The ?. is the optional chaining operator, which prevents an error if field is null or undefined.
+// === "" checks if the trimmed value is an empty string.
         throw ApiError(400, "All fields are required")
     }
 
@@ -85,7 +88,7 @@ const registerUser = asyncHandler(async (req, res) => {
     )
 
     const createdUser = await User.findById(user._id).select(
-        "-password -refreshToken"
+        "-password -refreshToken" //This means we are not sending the password and refreshToken to the frontend
     )
 
     if (!createdUser) {

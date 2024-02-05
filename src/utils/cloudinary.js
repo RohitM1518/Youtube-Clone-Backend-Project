@@ -1,3 +1,6 @@
+//Multer is used to upload the file to our server and cloudinary is used to upload the file to cloudinary
+
+
 import { v2 as cloudinary } from 'cloudinary';
 import fs from 'fs' //This is the file system from the node js
 //used to manage the filesystem like read,open,close  
@@ -12,7 +15,7 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-
+//We get localFilePath from multer middleware
 const uploadOnCloudinary = async (localFilePath)=>{
     try {
         if(!localFilePath) return null;
