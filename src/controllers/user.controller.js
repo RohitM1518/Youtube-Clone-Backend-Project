@@ -3,14 +3,15 @@ import { ApiError } from '../utils/ApiError.js'
 import { User } from '../models/user.model.js'
 import { uploadOnCloudinary } from "../utils/cloudinary.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
-import Jwt from "jsonwebtoken"
+import jwt from "jsonwebtoken"
 import mongoose from "mongoose"
 
 const generateAccessAndRefreshToken = async (userId) => {
     try {
         const user = await User.findById(userId);
+        // console.log("User in method",user)
         const accessToken = user.generateAccessToken()
-        const refreshToken = user.generateRefreshToken()
+        const refreshToken = await user.generateRefreshToken()
 
         //we are storing refresh token in database only for logged-in users not for the new registered ones
         user.refreshToken = refreshToken;
@@ -124,7 +125,8 @@ const loginUser = asyncHandler(async (req, res) => {
     }
 
     const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id)
-
+    // console.log("accessToken", accessToken)
+    // console.log("refreshToken", refreshToken)
     const loggedInUser = await User.findById(user._id).select("-password -refreshToken")
     //or user.refreshToken = refreshToken
 
@@ -171,17 +173,20 @@ const logoutUser = asyncHandler(async (req, res) => {
     return res.status(200).clearCookie("accessToken", options).clearCookie("refreshToken", options).json(new ApiResponse(200, {}, "User logged Out"))
 })
 
+
+
 const refreshAccessToken = asyncHandler(async (req, res) => {
     const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
 
-    if (!incomingRefreshToken) {
+    console.log("incoming refresh token", incomingRefreshToken)
+    if (!incomingRefreshToken || incomingRefreshToken === "null") {
         throw new ApiError(401, "Unauthorized request")
     }
 
     try {
-        const decodedToken = jwt.verify(
+        const decodedToken = jwt.verify( 
             incomingRefreshToken,
-            process.env.REFERSH_TOKEN_SECRET
+            process.env.REFRESH_TOKEN_SECRET
         )
 
         const user = await User.findById(decodedToken?._id)
@@ -197,9 +202,9 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
             secure: true,
         }
 
-        const { accessToken, newrefreshToken } = await generateAccessAndRefreshToken(user._id)
+        const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id)
 
-        return res.status(200).cookie("accessToken", accessToken).cookie("refreshToken", newrefreshToken).json(new ApiResponse(200, { accessToken: accessToken, refreshToken: newrefreshToken }, "Access Token Refreshed"))
+        return res.status(200).cookie("accessToken", accessToken,options).cookie("refreshToken", refreshToken,options).json(new ApiResponse(200, { accessToken: accessToken, refreshToken: refreshToken }, "Access Token Refreshed"))
     } catch (error) {
         throw new ApiError(401, error?.message || "Invalid Refresh Token")
     }
@@ -208,7 +213,9 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 
 const changeCurrentPassword = asyncHandler(async (req, res) => {
     const { oldPassword, newPassword } = req.body
-    const user = User.findById(req.user?._id)
+    const user = await User.findById(req.user?._id)
+    // console.log("User ",user)
+   // console.log("Old password is:  ",oldPassword,"\nNew Password is : ",newPassword);
     const isPasswordValid = await user.isPasswordCorrect(oldPassword)
     if (!isPasswordValid) {
         throw new ApiError(400, "Invalid Password")
@@ -219,7 +226,7 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(
         200,
         {},
-        "Password Saved Successfully"
+        "Password Updated Successfully"
     ))
 })
 
@@ -229,14 +236,19 @@ const getCurrentUser = asyncHandler(async (req, res) => {
 
 const updateAccountDetails = asyncHandler(async (req, res) => {
     const { fullname, email } = req.body
+   // console.log("fullname", fullname, "email", email)
     if (!fullname && !email) {
         throw new ApiError(400, "All feilds are required")
     }
-    const user = User.findByIdAndUpdate(req.user?._id, {
-        $set: [{ fullname, email: email }]
+
+    const user = await User.findByIdAndUpdate(req.user?._id, {
+        $set: { fullname, email: email }
     }, { new: true }).select("-password")
 
-    return res.status(200).json(new ApiResponse(
+    console.log("Successfull ")
+    return res
+    .status(200)
+    .json(new ApiResponse(
         200,
         user,
         "Account Details Updated Successfully"
@@ -249,7 +261,7 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     if (!localAvatarPath) {
         throw new ApiError(400, "Avatar file is missing")
     }
-    const avatar = await uploadOnCloudinary(avatarLocalPath)
+    const avatar = await uploadOnCloudinary(localAvatarPath)
     if (!avatar.url) {
         throw new ApiError(400, "Error while uploading on avatar")
     }
@@ -288,7 +300,7 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
 
 const getUserChannelProfile = asyncHandler(async (req, res) => {
     const { username } = req.params //username is the username of the user whose channel profile we want to see and we are getting it from the url
-
+    //console.log("username ",username)
     if (!username?.trim()) {
         throw new ApiError(400, "Username is required")
     }
@@ -328,9 +340,9 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
                 },
                 isSubscribed: {
                     $cond: {
-                        $if: { $in: [req.user?._id, "$subscribers.subscriber"] },
-                        $then: true,
-                        $else: false
+                        if: { $in: [req.user?._id, "$subscribers.subscriber"] },
+                        then: true,
+                        else: false
                     }
                 }
             }
@@ -402,7 +414,7 @@ const getWatchHistory = asyncHandler(async (req, res) => {
     ])
     return res
         .status(200)
-        .json(new ApiResponse(200, user[0].watchHistory, "Watch history fetched successfully"))
+        .json(new ApiResponse(200, user[0]?.watchHistory, "Watch history fetched successfully"))
 })
 
 
