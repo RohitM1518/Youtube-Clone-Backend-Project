@@ -22,10 +22,12 @@ app.use(cookieParser())
 //import routes
 import userRoute from "./routes/user.routes.js"
 import tweetsRoute from "./routes/tweet.routes.js"
+import subscriptionRoutes from "./routes/subscription.routes.js";
 
 app.use("/api/v1/users",userRoute) //use instead of app.get
 //http://Localhost:8000/api/v1/users/register
 app.use("/api/v1/tweets",tweetsRoute);
+app.use("/api/v1/subscription",subscriptionRoutes)
 
 
 export {app}
