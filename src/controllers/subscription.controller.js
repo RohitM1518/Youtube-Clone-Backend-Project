@@ -46,7 +46,7 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
     if(!subscribedTo){
         throw new ApiError(500,'Server Error while fetching subscribedTo')
     }
-    return res.status(200).json(new ApiResponse(200,subscribedTo,"Successfully fetched all the accounts user subscribed to"))
+    return res.status(200).json(new ApiResponse(200,subscribedTo.length,"Successfully fetched all the accounts user subscribed to"))
 
 })
 
