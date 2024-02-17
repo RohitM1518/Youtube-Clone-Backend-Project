@@ -10,7 +10,6 @@ import { getuserbyusername } from '../utils/getuserbyusername.middleware.js'
 
 const getAllVideos = asyncHandler(async (req, res) => {
     const { page = 1, limit = 10, query, sortBy, sortType, username } = req.query
-    //TODO: get all videos based on query, sort, pagination
     if (page < 1) throw new ApiError(400, "Invalid page number")
     if (limit < 1) throw new ApiError(400, "Invalid limit")
     if (sortBy && !["title", "createdAt", "views"].includes(sortBy)) throw new ApiError(400, "Invalid sortBy")
@@ -46,9 +45,19 @@ const getAllVideos = asyncHandler(async (req, res) => {
                     from: "users",
                     localField: "owner",
                     foreignField: "_id",
-                    as:"users"
+                    as:"users",
+                    pipeline:[
+                        {
+                            $project:{
+                                username:1,
+                                fullname:1,
+                                avatar:1,
+                                coverImage:1,
+                            }
+                        }
+                    ]
                 }
-            },      
+            },
     ]
 
         let pipelineToFindUsingUsername = [
@@ -58,6 +67,16 @@ const getAllVideos = asyncHandler(async (req, res) => {
                     localField: "owner",
                     foreignField: "_id",
                     as: "users",
+                    pipeline:[
+                        {
+                            $project:{
+                                username:1,
+                                fullname:1,
+                                avatar:1,
+                                coverImage:1,
+                            }
+                        }
+                    ]
                 }
             },
             {
@@ -105,7 +124,6 @@ const getAllVideos = asyncHandler(async (req, res) => {
 
 const publishAVideo = asyncHandler(async (req, res) => {
     const { title, description } = req.body
-    // TODO: get video, upload to cloudinary, create video
     if (!title || !description) throw new ApiError(400, "Title and description is needed")
 
     const videofileLocalpath = req.files?.videoFile[0]?.path
@@ -152,30 +170,39 @@ const getVideoById = asyncHandler(async (req, res) => {
         throw new ApiError(404, "Video not found")
     }
     return res
-        .sataus(200)
+        .status(200)
         .json(new ApiResponse(200, { data: video }, "Video found successfully"))
 
 })
 
 const updateVideo = asyncHandler(async (req, res) => {
-    const { videoId, title, description, thumbnail } = req.params
-    if (!title && !description && !thumbnail) throw new ApiError(400, "Atleast one field is required")
+    const { videoId } = req.params
+    const {title, description} = req.body
+    //console.log("Video ID", videoId,"title",title,"description",description)
+    if (!title && !description) throw new ApiError(400, "All two fields are required is required")
     if (!videoId) throw new ApiError(400, "Video id is required")
     if (!mongoose.isValidObjectId(videoId)) {
         throw new ApiError(400, "Invalid video id")
     }
 
-    const video = await Video.findByIdAndUpdate(videoId, {
+    const thumbnailLocalpath = req.files?.thumbnail[0]?.path
+    if(!thumbnailLocalpath) throw new ApiError(400, "Thumbnail is required")
+
+    const thumbnail = await uploadOnCloudinary(thumbnailLocalpath);
+    if(!thumbnail) throw new ApiError(503, "Failed to upload thumbnail")
+
+    const updatedVideo = await Video.findByIdAndUpdate(videoId, {
         title,
         description,
-        thumbnail
-    }, { new: true }).populate('owner', 'username', 'email')
+        thumbnail:thumbnail?.url
+    }, { new: true }).populate('owner', 'username email')
+    //console.log("Updated Video", updatedVideo)
 
-    if (!video) {
+    if (!updatedVideo) {
         throw new ApiError(404, "Video is not found or not updated")
     }
 
-    res.status(200).json(new ApiResponse(200, { data: video }, "Video updated successfully"))
+    res.status(200).json(new ApiResponse(200, {data:updatedVideo} , "Video updated successfully"))
 
 })
 
@@ -186,7 +213,8 @@ const deleteVideo = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Invalid video id")
     }
     const video = await Video.findByIdAndDelete(videoId)
-    res.sataus(200).json(new ApiResponse(200, { data: video }, "Video deleted successfully"))
+    
+    res.status(200).json(new ApiResponse(200, { data: video }, "Video deleted successfully"))
 })
 
 const togglePublishStatus = asyncHandler(async (req, res) => {
