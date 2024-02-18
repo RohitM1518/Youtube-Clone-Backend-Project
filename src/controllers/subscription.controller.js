@@ -5,8 +5,8 @@ import { Subscription } from '../models/subscription.model.js'
 import { getuserbyusername } from "../utils/getuserbyusername.middleware.js"
 
 const toggleSubscription = asyncHandler(async (req, res) => {
-    
-    const channel = await getuserbyusername(req.params.channelname)
+    const {channelname} = req.params
+    const channel = await getuserbyusername(channelname)
     if(channel===null){
         throw new ApiError(404,"No User with this username exists")
     }

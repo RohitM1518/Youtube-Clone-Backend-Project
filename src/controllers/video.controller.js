@@ -115,11 +115,6 @@ const getAllVideos = asyncHandler(async (req, res) => {
 
     res.status(200).json(new ApiResponse(200, { videos }, "Videos fetched Successfully"))
 
-
-
-
-
-
 })
 
 const publishAVideo = asyncHandler(async (req, res) => {
@@ -154,7 +149,7 @@ const publishAVideo = asyncHandler(async (req, res) => {
         throw new ApiError(500, 'Failed to save video in database')
     }
 
-    return res.status(200).json(new ApiResponse(200, { data: publishedVideo }, 'Video has been published'))
+    return res.status(200).json(new ApiResponse(200, { publishedVideo }, 'Video has been published'))
 
 })
 
@@ -191,7 +186,7 @@ const updateVideo = asyncHandler(async (req, res) => {
     const thumbnail = await uploadOnCloudinary(thumbnailLocalpath);
     if(!thumbnail) throw new ApiError(503, "Failed to upload thumbnail")
 
-    const updatedVideo = await Video.findByIdAndUpdate(videoId, {
+    const updatedVideo = await Video.findOneAndUpdate({_id:videoId,owner: req.user._id}, {
         title,
         description,
         thumbnail:thumbnail?.url
@@ -212,7 +207,7 @@ const deleteVideo = asyncHandler(async (req, res) => {
     if (!mongoose.isValidObjectId(videoId)) {
         throw new ApiError(400, "Invalid video id")
     }
-    const video = await Video.findByIdAndDelete(videoId)
+    const video = await Video.findOneAndDelete({ _id: videoId, owner: req.user._id })
     
     res.status(200).json(new ApiResponse(200, { data: video }, "Video deleted successfully"))
 })
@@ -224,7 +219,7 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Invalid video id")
     }
 
-    const video = await Video.findById(videoId)
+    const video = await Video.findOne({_id:videoId, owner: req.user._id}).select('published')
     if (!video) {
         throw new ApiError(404, "Video not found")
     }
