@@ -1,11 +1,9 @@
 import mongoose, { isValidObjectId } from "mongoose"
 import { Video } from "../models/video.model.js"
-import { User } from "../models/user.model.js"
 import { ApiError } from "../utils/ApiError.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
 import { asyncHandler } from "../utils/asyncHandler.js"
 import { uploadOnCloudinary } from "../utils/cloudinary.js"
-import { getuserbyusername } from '../utils/getuserbyusername.middleware.js'
 
 
 const getAllVideos = asyncHandler(async (req, res) => {
@@ -112,8 +110,10 @@ const getAllVideos = asyncHandler(async (req, res) => {
     if (!videos) {
         throw new ApiError(500, "No Videos found")
     }
+    const totalVideos = videos.length
+    const totalPages = Math.ceil(totalVideos / limit)
 
-    res.status(200).json(new ApiResponse(200, { videos }, "Videos fetched Successfully"))
+    res.status(200).json(new ApiResponse(200, { videos,totalVideos,totalPages }, "Videos fetched Successfully"))
 
 })
 
@@ -164,9 +164,11 @@ const getVideoById = asyncHandler(async (req, res) => {
     if (!video) {
         throw new ApiError(404, "Video not found")
     }
+    video.views += 1
+    await video.save()
     return res
         .status(200)
-        .json(new ApiResponse(200, { data: video }, "Video found successfully"))
+        .json(new ApiResponse(200, { video }, "Video found successfully"))
 
 })
 

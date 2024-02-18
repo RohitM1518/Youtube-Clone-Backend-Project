@@ -28,6 +28,7 @@ import playlistRoute from "./routes/playlist.routes.js"
 import videoRoute from "./routes/video.routes.js"
 import commentRoute from "./routes/comment.routes.js"
 import likeRoute from "./routes/like.routes.js"
+import dashboardRoute from "./routes/dashboard.routes.js"
 
 app.use("/api/v1/users",userRoute) //use instead of app.get
 //http://Localhost:8000/api/v1/users/register
@@ -38,5 +39,6 @@ app.use("/api/v1/playlist", playlistRoute)
 app.use("/api/v1/videos",videoRoute)
 app.use("/api/v1/comments",commentRoute)
 app.use("/api/v1/likes",likeRoute)
+app.use("/api/v1/dashboard",dashboardRoute)
 
 export {app}
