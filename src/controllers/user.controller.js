@@ -298,17 +298,17 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
 })
 
 const getUserChannelProfile = asyncHandler(async (req, res) => {
-    const { username } = req.params //username is the username of the user whose channel profile we want to see and we are getting it from the url
+    const { channelId } = req.params //username is the username of the user whose channel profile we want to see and we are getting it from the url
     //console.log("username ",username)
-    if (!username?.trim()) {
-        throw new ApiError(400, "Username is required")
+    if (!channelId) {
+        throw new ApiError(400, "Channel ID is required")
     }
 
     const channel = await User.aggregate([
         {
             //Below {} are the pipelines or stages
             $match: { //match is used to find document based on the username and we get document on this stage
-                username: username?.toLowerCase()
+                _id: new mongoose.Types.ObjectId(channelId)
             },
         },
         {
@@ -348,7 +348,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
         },
         {
             $project: {
-                fullName: 1,
+                fullname: 1,
                 username: 1,
                 subscribersCount: 1,
                 subscribedToCount: 1,

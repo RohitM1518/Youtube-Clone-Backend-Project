@@ -3,23 +3,22 @@ import { ApiResponse } from "../utils/ApiResponse.js"
 import { asyncHandler } from "../utils/asyncHandler.js"
 import { Subscription } from '../models/subscription.model.js'
 import { getuserbyusername } from "../utils/getuserbyusername.middleware.js"
+import mongoose from "mongoose"
 
 const toggleSubscription = asyncHandler(async (req, res) => {
-    const {channelname} = req.params
-    const channel = await getuserbyusername(channelname)
-    if(channel===null){
-        throw new ApiError(404,"No User with this username exists")
+    const {channelId} = req.params
+    if(!channelId){
+        throw new ApiError(404,"No User Such channel exists")
     }
     const user = req.user
-
-    const  subscribed = await Subscription.findOne({channel: user._id,subscriber: channel._id})
+    const  subscribed = await Subscription.findOne({channel: new mongoose.Types.ObjectId(channelId),subscriber: user._id})
 
     if(subscribed){
-        await Subscription.deleteOne({channel: user._id,subscriber: channel._id})
+        await Subscription.deleteOne({channel: new mongoose.Types.ObjectId(channelId),subscriber: user._id})
         return res.status(200).json(new ApiResponse(200,{},"Unsunscribed successfully"))
     }
     if(!subscribed){
-        await Subscription.create({channel:channel._id, subscriber:user._id})
+        await Subscription.create({channel: new mongoose.Types.ObjectId(channelId),subscriber: user._id})
         return res.status(200).json(new ApiResponse(200,{},"Subscribed successfully"))
     }
     return res

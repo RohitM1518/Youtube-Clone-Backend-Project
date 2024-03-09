@@ -5,7 +5,7 @@ import {verifyJWT} from "../middlewares/auth.middleware.js"
 const router = Router()
 
 router.route("/create-playlist").post(verifyJWT,createPlaylist)
-router.route("/get-user-playlists/:username").post(verifyJWT,getUserPlaylists)
+router.route("/get-user-playlists/:channelId").get(getUserPlaylists)
 router.route("/get-playlist/:playlistId").get(getPlaylistById)
 router.route("/add-video-to-playlist/:playlistId/:videoId").post(verifyJWT,addVideoToPlaylist)
 router.route("/remove-video-from-playlist/:playlistId/:videoId").post(verifyJWT,removeVideoFromPlaylist)

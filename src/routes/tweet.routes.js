@@ -1,8 +1,10 @@
 import {Router} from 'express'
-import { createTweet, deleteTweet, getUserTweets, updateTweet } from '../controllers/tweet.controller.js'
+import { createTweet, deleteTweet, getChannelTweets, getUserTweets, updateTweet } from '../controllers/tweet.controller.js'
 import { verifyJWT } from '../middlewares/auth.middleware.js'
 
 const router = Router()
+
+router.route("/channel-tweets/:channelId").get(getChannelTweets) 
 
 router.use(verifyJWT) //This  middleware will check if the user is authenticated or not for all routes, and then call the next function only
 router.route("/create-tweet").post(createTweet)

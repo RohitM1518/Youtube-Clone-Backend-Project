@@ -2,8 +2,8 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import {Playlist} from '../models/playlist.model.js'
-import { getuserbyusername } from "../utils/getuserbyusername.middleware.js";
 import { Video } from "../models/video.model.js";
+import mongoose from "mongoose";
 
 const createPlaylist = asyncHandler(async (req, res) => {
     const {name, description} = req.body
@@ -22,17 +22,52 @@ const createPlaylist = asyncHandler(async (req, res) => {
 })
 
 const getUserPlaylists = asyncHandler(async (req, res) => {
-    const {username} = req.params
-    const userId = await getuserbyusername(username);
-    if(!userId)
-    { 
-        throw new ApiError(404,'No User Found')
+    const { channelId } = req.params
+
+    if (!channelId) {
+        throw new ApiError(404, 'No Channel Found')
     }
-    const playlists = await Playlist.find({owner:userId}).sort('-createdAt');
+
+    const playlists = await Playlist.aggregate([
+        {
+            $match: { owner: new mongoose.Types.ObjectId(channelId) }
+        },
+        {
+            $lookup: {
+                from: 'videos',
+                localField: 'videos',
+                foreignField: '_id',
+                as: 'videos',
+                pipeline: [
+                    {
+                        $project: {
+                            title: 1,
+                            thumbnail: 1
+                            // Add other fields you want to include from the videos collection
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            $addFields: {
+                videosCount: { $size: '$videos' } // Add a new field 'videosCount' representing the number of videos
+            }
+        },
+        {
+            $sort: { createdAt: -1 }
+        }
+    ])
+
+    if (!playlists) {
+        throw new ApiError(500, "Something went wrong while fetching the playlists")
+    }
+
     return res
-            .status(200)
-            .json(new ApiResponse(200,playlists,"All playlists of the user are fetched"));
+        .status(200)
+        .json(new ApiResponse(200, playlists, "All playlists of the user are fetched"));
 })
+
 
 const getPlaylistById = asyncHandler(async (req, res) => {
     const {playlistId} = req.params

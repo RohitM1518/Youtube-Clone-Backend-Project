@@ -5,7 +5,7 @@ import { getSubscribedChannels, getUserChannelSubscribers, toggleSubscription } 
 const router = Router();
 
 
-router.route("/toggle-subscription/:channelname").post(verifyJWT,toggleSubscription)
+router.route("/toggle-subscription/:channelId").post(verifyJWT,toggleSubscription)
 router.route("/subscribers/:channelname").get(getUserChannelSubscribers)
 router.route("/subscribedto").get(verifyJWT,getSubscribedChannels)
 

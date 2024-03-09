@@ -2,6 +2,7 @@ import { asyncHandler } from "../utils/asyncHandler.js"
 import { ApiError } from '../utils/ApiError.js'
 import { Tweet } from '../models/tweet.model.js'
 import { ApiResponse } from "../utils/ApiResponse.js"
+import mongoose from "mongoose"
 
 
 const createTweet = asyncHandler(async (req, res) => {
@@ -46,6 +47,45 @@ const getUserTweets = asyncHandler(async (req, res) => {
 
     return res.status(200).json(new ApiResponse(200, tweets.reverse(), 'Tweets fetched Successfully'));
 });
+const getChannelTweets = asyncHandler(async (req, res) => {
+    const {channelId}=req.params;
+    if(!channelId) throw new ApiError(400, "Invalid request to get channel tweets");
+    const tweets = await Tweet.aggregate([
+        {
+            $match: {
+                owner: new mongoose.Types.ObjectId(channelId)
+            }
+        },
+        {
+            $lookup: {
+                from: "users",
+                localField: "owner",
+                foreignField: "_id",
+                as: "owner"
+            }
+        },
+        {
+            $unwind: "$owner"
+        },
+        {
+            $project: {
+                "owner.password": 0,
+                "owner.email": 0,
+                "owner.createdAt": 0,
+                "owner.updatedAt": 0,
+                "owner.__v": 0,
+                "owner.refreshToken": 0,
+                "owner.watchHistory": 0,
+            }
+        }
+    ])
+
+    if (tweets.length === 0) {
+        throw new ApiError(404, "No Tweets Found!");
+    }
+
+    return res.status(200).json(new ApiResponse(200, tweets.reverse(), 'Tweets fetched Successfully'));
+});
 
 const deleteTweet = asyncHandler(async (req, res) => {
     const { tweetId } = req.params;
@@ -64,5 +104,6 @@ export{
     createTweet,
     updateTweet,
     getUserTweets,
-    deleteTweet
+    deleteTweet,
+    getChannelTweets
 }
