@@ -11,6 +11,7 @@ export const verifyJWT = asyncHandler(async (req, _, next) => {
     try {
         //req.header is to get the token from the header and can be tested using the postman
         //In header we get in the format of "Bearer token-value" so we have to remove the "Bearer " from the token by replacing bearer with empty string
+        // console.log("This is req.cookies",req.cookies)
         const token = req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer ", "") 
         if (!token) {
             throw new ApiError(401, "Unauthorized request")

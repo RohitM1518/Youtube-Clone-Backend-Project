@@ -197,11 +197,12 @@ const publishAVideo = asyncHandler(async (req, res) => {
 
 const getVideoById = asyncHandler(async (req, res) => {
     const { videoId } = req.params
+    console.log("Video ID", videoId)
     if (!videoId) throw new ApiError(400, "Video id is required")
     if (!mongoose.isValidObjectId(videoId)) {
         throw new ApiError(400, "Invalid video id")
     }
-    const video = await Video.findById(videoId).populate('owner', 'username email')
+    const video = await Video.findById(videoId).populate('owner', 'username fullname email avatar thumbnail')
 
     if (!video) {
         throw new ApiError(404, "Video not found")
@@ -286,7 +287,7 @@ const getAllVideosByUserID = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Invalid user id")
     }
 
-    const videos = await Video.find({ owner: channelId }).populate('owner', 'username email')
+    const videos = await Video.find({ owner: channelId }).populate('owner', 'username email avatar coverImage')
 
     if (!videos) {
         throw new ApiError(500, "No Videos found")

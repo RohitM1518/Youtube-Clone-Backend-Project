@@ -7,10 +7,12 @@ import mongoose from "mongoose"
 
 const toggleSubscription = asyncHandler(async (req, res) => {
     const {channelId} = req.params
+    console.log("Channel Id ",channelId)
     if(!channelId){
         throw new ApiError(404,"No User Such channel exists")
     }
     const user = req.user
+    console.log("Requesting User ",user)
     const  subscribed = await Subscription.findOne({channel: new mongoose.Types.ObjectId(channelId),subscriber: user._id})
 
     if(subscribed){
@@ -29,11 +31,11 @@ const toggleSubscription = asyncHandler(async (req, res) => {
 
 // controller to return subscriber list of a channel
 const getUserChannelSubscribers = asyncHandler(async (req, res) => {
-    const channel = await getuserbyusername(req.params.channelname)
-    if(channel===null){
-        throw new ApiError(404,"No User with this username exists")
+    const {channelId} = req.params
+    if(!channelId){
+        throw new ApiError(404,"No User with this ChannelID exists")
     }
-    const subscribers=await Subscription.find({channel:channel._id})
+    const subscribers=await Subscription.find({channel:new mongoose.Types.ObjectId(channelId)})
     
     return res.status(200).json(new ApiResponse(200,subscribers?.length,"Successfully fetched the users who have subscribed to this Channel."))
 })

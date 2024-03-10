@@ -5,7 +5,6 @@ const userSchema = new mongoose.Schema(
     {
         username:{
             type:String,
-            required:true,
             unique:true,
             lowercase:true,
             trim:true,
@@ -21,7 +20,6 @@ const userSchema = new mongoose.Schema(
         fullname:{
             type:String,
             required:true,
-            lowercase:true,
             index:true,
         },
         avatar:{
@@ -39,10 +37,13 @@ const userSchema = new mongoose.Schema(
         ],
         password:{
             type:String, //In database the password is stored as encrypted using bycryptjs package(npm install bcryptjs)
-            required:[true,"Password is required"]
         },
         refreshToken:{
             type:String,
+        },
+        fromGoogle:{
+            type:Boolean,
+            default: false
         }
 
     },{timestamps:true})

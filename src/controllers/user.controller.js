@@ -6,6 +6,10 @@ import { ApiResponse } from "../utils/ApiResponse.js"
 import jwt from "jsonwebtoken"
 import mongoose from "mongoose"
 
+function capitalizeFirstLetter(string) {
+    return string.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+}
+
 const generateAccessAndRefreshToken = async (userId) => {
     try {
         const user = await User.findById(userId);
@@ -75,7 +79,7 @@ const registerUser = asyncHandler(async (req, res) => {
 
     const user = await User.create(
         {
-            fullname,
+            fullname: capitalizeFirstLetter(fullname.trim()),
             avatar: avatar.url,
             coverImage: coverImage?.url || "",
             email,
@@ -92,8 +96,22 @@ const registerUser = asyncHandler(async (req, res) => {
         throw new ApiError(500, "Something went wrong while registering")
     }
 
-    return res.status(201).json(
-        new ApiResponse(200, createdUser)
+    const { accessToken, refreshToken } = await generateAccessAndRefreshToken(createdUser._id)
+
+    const options = {
+        httpOnly: true, //This means that the cookie can only be accessed by the server
+        secure: false //This means a cookie can only be accessed by the server if the request is being sent over HTTPS
+        //TODO: For production set it to true
+    }
+
+        //TODO: DO not send accessToken and refereshToken in a response
+
+
+    return res.status(201)
+    .cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", refreshToken, options)
+    .json(
+        new ApiResponse(200, {user:createdUser,accessToken,refreshToken},"User Registered Successfully")
     )
 })
 
@@ -105,13 +123,16 @@ const loginUser = asyncHandler(async (req, res) => {
     //access and referesh token
     // send tokens using cookie
 
-    const { email, username, password } = req.body
-    if (!username && !email) {
+    const { usernameOrEmail, password } = req.body
+    if (!usernameOrEmail) {
         throw new ApiError(400, "Email or Username is required")
     }
     const user = await User.findOne({
-        $or: [{ email }, { username }]  //$or is the mongodb operator
-    })
+        $or: [
+            { email: usernameOrEmail }, 
+            { username: usernameOrEmail }
+        ]
+    });
 
     if (!user) {
         throw new ApiError(404, "User Does not Exists")
@@ -131,10 +152,12 @@ const loginUser = asyncHandler(async (req, res) => {
 
     const options = {
         httpOnly: true, //This means that the cookie can only be accessed by the server
-        secure: true
+        secure: false //This means a cookie can only be accessed by the server if the request is being sent over HTTPS
+        //TODO: For production set it to true
     }
+    console.log("Access token",accessToken)
 
-
+    //TODO: DO not send accessToken and refereshToken in a response
     //The reason we are sending tokens in both cookies and response so that user can store 
     return res
         .status(200)
@@ -142,7 +165,7 @@ const loginUser = asyncHandler(async (req, res) => {
         .cookie("refreshToken", refreshToken, options)
         .json(new ApiResponse(
             200,
-            { user: loggedInUser, accessToken, refreshToken },
+            {user: loggedInUser ,accessToken,refreshToken},
             "User Logged In Successfully"
         ))
 
@@ -176,8 +199,9 @@ const logoutUser = asyncHandler(async (req, res) => {
 
 const refreshAccessToken = asyncHandler(async (req, res) => {
     const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
-
-    console.log("incoming refresh token", incomingRefreshToken)
+    // console.log("incoming refresh token", incomingRefreshToken)
+    console.log("Refresh Token later",req.body.refreshToken)
+   // console.log("incoming refresh token", incomingRefreshToken)
     if (!incomingRefreshToken || incomingRefreshToken === "null") {
         throw new ApiError(401, "Unauthorized request")
     }
@@ -203,7 +227,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 
         const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id)
 
-        return res.status(200).cookie("accessToken", accessToken,options).cookie("refreshToken", refreshToken,options).json(new ApiResponse(200, { accessToken: accessToken, refreshToken: refreshToken }, "Access Token Refreshed"))
+        return res.status(200).cookie("accessToken", accessToken,options).cookie("refreshToken", refreshToken,options).json(new ApiResponse(200, { user: user,accessToken,refreshToken }, "Access Token Refreshed"))
     } catch (error) {
         throw new ApiError(401, error?.message || "Invalid Refresh Token")
     }
@@ -416,6 +440,28 @@ const getWatchHistory = asyncHandler(async (req, res) => {
         .json(new ApiResponse(200, user[0]?.watchHistory, "Watch history fetched successfully"))
 })
 
+const googleAuth = asyncHandler(async(req,res)=>{
+    try {
+        const user = await User.findOne({email:req.body.email})
+
+        if(user){
+            const {accessToken,refreshToken} = await generateAccessAndRefreshToken(user._id)
+            return res.status(200).json(new ApiResponse(200,{user:user,accessToken,refreshToken},"User Logged In Successfully"))
+        }
+        const newUser = await User.create({
+            fullname:capitalizeFirstLetter(req.body.fullname),
+            email:req.body.email,
+            avatar:req.body.avatar,
+            fromGoogle:true
+        })
+        const savedUser = await newUser.save()
+        const {accessToken,refreshToken} = await generateAccessAndRefreshToken(savedUser._id)
+        return res.status(201).json(new ApiResponse(201,{user:savedUser,accessToken,refreshToken},"User Registered Successfully"))
+    } catch (error) {
+        throw new ApiError(500,"Something went wrong while logging in with google")
+    }
+})
+
 
 export {
     registerUser,
@@ -427,5 +473,6 @@ export {
     updateAccountDetails, updateUserAvatar,
     updateUserCoverImage,
     getWatchHistory,
-    getUserChannelProfile
+    getUserChannelProfile,
+    googleAuth
 }
