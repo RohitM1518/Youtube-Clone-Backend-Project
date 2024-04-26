@@ -4,6 +4,9 @@ import { ApiError } from "../utils/ApiError.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
 import { asyncHandler } from "../utils/asyncHandler.js"
 import { uploadOnCloudinary } from "../utils/cloudinary.js"
+import { User } from "../models/user.model.js"
+import jwt from "jsonwebtoken"
+
 
 
 const getAllVideosByCondition = asyncHandler(async (req, res) => {
@@ -25,6 +28,11 @@ const getAllVideosByCondition = asyncHandler(async (req, res) => {
                     { title: { $regex: new RegExp(query, 'i') } },
                     { description: { $regex: new RegExp(query, 'i') } },
                 ]
+            }
+        },
+        {
+            $match: {
+                isPublished: true
             }
         },
         {
@@ -85,6 +93,11 @@ const getAllVideosByCondition = asyncHandler(async (req, res) => {
             }
         },
         {
+            $match: {
+                isPublished: true
+            }
+        },
+        {
             $sort: {
                 [sortBy]: sortType === 'desc' ? -1 : 1
             }
@@ -120,6 +133,11 @@ const getAllVideosByCondition = asyncHandler(async (req, res) => {
 const getAllVideos = asyncHandler(async (req, res) => {
     const { page = 1, limit = 10, sortBy = "createdAt", sortType = "asc" } = req.query
     let pipeline = [
+        {
+            $match: {
+                isPublished: true
+            }
+        },
         {
             $sort: {
                 [sortBy]: sortType === 'desc' ? -1 : 1
@@ -197,12 +215,23 @@ const publishAVideo = asyncHandler(async (req, res) => {
 
 const getVideoById = asyncHandler(async (req, res) => {
     const { videoId } = req.params
+    const token = req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer ", "")
+    //Here we decoding the token to get the id from the function 
+    if (token) {
+        const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+        const user = await User.findById(decodedToken?._id).select("-password -refreshToken")
+        if (user) {
+            user.addToWatchHistory(videoId)
+        }
+    }
+
     console.log("Video ID", videoId)
     if (!videoId) throw new ApiError(400, "Video id is required")
     if (!mongoose.isValidObjectId(videoId)) {
         throw new ApiError(400, "Invalid video id")
     }
-    const video = await Video.findById(videoId).populate('owner', 'username fullname email avatar thumbnail')
+    const video = await Video.findOne({ _id: new mongoose.Types.ObjectId(videoId), isPublished: true }).populate('owner', 'username fullname email avatar thumbnail')
+    // console.log("Video", video)
 
     if (!video) {
         throw new ApiError(404, "Video not found")

@@ -17,7 +17,7 @@ router.route("/publish-video").post(verifyJWT, upload.fields([
 
 router.route("/get-all-videos-by-condition").get(getAllVideosByCondition)
 router.route("/get-all-videos").get(getAllVideos)
-router.route("/get-video-by-id/:videoId").get(getVideoById)
+router.route("/get-video-by-id/:videoId").post(getVideoById)
 router.route("/update-video/:videoId").post(verifyJWT, upload.fields([
    { 
     name:'thumbnail',

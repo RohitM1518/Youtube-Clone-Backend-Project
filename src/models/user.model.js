@@ -65,6 +65,13 @@ userSchema.methods.isPasswordCorrect = async function(password){
    //returns true or false
 }
 
+userSchema.methods.addToWatchHistory = async function(videoId) {
+    if (!this.watchHistory.includes(videoId)) {
+        this.watchHistory.push(videoId);
+        await this.save();
+    }
+};
+
 userSchema.methods.generateAccessToken = function(){
     console.log("Sub 1")
     return jwt.sign(
