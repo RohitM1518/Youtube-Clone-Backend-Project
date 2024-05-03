@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt"
+
 const userSchema = new mongoose.Schema(
     {
         username:{
@@ -73,10 +74,9 @@ userSchema.methods.addToWatchHistory = async function(videoId) {
 };
 
 userSchema.methods.generateAccessToken = function(){
-    console.log("Sub 1")
     return jwt.sign(
         {
-            _id: this.id,
+            _id: this._id,
             email: this.email,
             username:this.username,
             fullname:this.fullname //right side things are coming from database
@@ -90,7 +90,7 @@ userSchema.methods.generateAccessToken = function(){
 userSchema.methods.generateRefreshToken = async function(){
     return jwt.sign(
         {
-            _id: this.id,
+            _id: this._id,
         },
         process.env.REFRESH_TOKEN_SECRET,//This is the secret key which is used to encrypt the data
         {

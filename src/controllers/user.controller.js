@@ -49,7 +49,7 @@ const registerUser = asyncHandler(async (req, res) => {
         // field represents each element of the array during iteration.
         // field?.trim() trims any leading or trailing whitespaces from the value of field. The ?. is the optional chaining operator, which prevents an error if field is null or undefined.
         // === "" checks if the trimmed value is an empty string.
-        throw ApiError(400, "All fields are required")
+        throw new ApiError(400, "All fields are required")
     }
 
     const existedUser = await User.findOne({
@@ -268,7 +268,7 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
         $set: { fullname, email: email }
     }, { new: true }).select("-password") //This option, when set to true, instructs Mongoose to return the modified document rather than the original one. 
 
-    console.log("Successfull ")
+    console.log("Successfull")
     return res
     .status(200)
     .json(new ApiResponse(
