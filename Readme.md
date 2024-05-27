@@ -1,4 +1,4 @@
-# Video Player
+# Online Video-Sharing Platform
 
 This is a video player web application built using Express.js, MongoDB, and Mongoose. It serves as the backend for a video streaming platform similar to YouTube.
 
