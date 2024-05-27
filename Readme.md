@@ -22,7 +22,7 @@ This is an online video-sharing web application built using Express.js, MongoDB,
 1. Clone the repository: `git clone https://github.com/your-username/online-video-sharing-platform.git`
 2. Install dependencies: `npm install`
 3. Set up the MongoDB connection
-4. Start the server: `npm start`
+4. Start the server: `npm run dev`
 5. The server will be running on `http://localhost:3000` (or the specified port)
 
 ## Contributing
