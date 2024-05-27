@@ -24,9 +24,6 @@ This is a video player web application built using Express.js, MongoDB, and Mong
 4. Start the server: `npm start`
 5. The server will be running on `http://localhost:3000` (or the specified port)
 
-## API Documentation
-
-The API documentation can be found in the `docs` folder or accessed at [https://your-api-docs.com](https://your-api-docs.com).
 
 ## Contributing
 
@@ -36,7 +33,6 @@ Contributions are welcome! Please open an issue or submit a pull request if you 
 
 - Implement real-time streaming capabilities
 - Integrate with a video transcoding service
-- Add support for live streaming
 - Enhance recommendation algorithms for suggested videos
 - Implement monetization features (e.g., ads, subscriptions)
 
